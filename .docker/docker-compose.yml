@@ -1,0 +1,91 @@
+version: '3.5'
+
+networks:
+  lumen-base:
+
+services:
+  nginx:
+    image: nginx:stable-alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+     # Add the port for Xdebug here
+      - "9002:9002"
+    volumes:
+      - ../src:/var/www/html
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+      - mysql
+    networks:
+      - lumen-base
+
+  mysql:
+    image: mysql:5.7.29
+    container_name: mysql
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: homestead
+      MYSQL_USER: homestead
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: secret
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    networks:
+      - lumen-base
+
+  php:
+    build:
+      context: .
+      dockerfile: php/Dockerfile
+    container_name: php
+    restart: unless-stopped
+    tty: true
+    volumes:
+      - ../src:/var/www/html
+      # Xdebug Config for PHPStorm, check your local path to make sure it exists
+#      - ./php/docker-xdebug.ini:/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+#      - ./php/php.ini:/usr/local/etc/php/php.ini
+      - ./php/php.ini:/usr/local/etc/php/conf.d/php.ini
+      - ./php/www.conf:/usr/local/etc/php-fpm.d/www.conf
+
+    ports:
+      - "9000:9000"
+    networks:
+      - lumen-base
+
+  composer:
+    image: composer:latest
+    container_name: composer
+    volumes:
+      - ../src:/var/www/html
+    working_dir: /var/www/html
+    depends_on:
+      - php
+    networks:
+      - lumen-base
+
+  npm:
+    image: node:13.7
+    container_name: npm
+    volumes:
+      - ../src:/var/www/html
+    working_dir: /var/www/html
+    entrypoint: ['npm']
+
+  artisan:
+    build:
+      context: .
+      dockerfile: php/Dockerfile
+    container_name: artisan
+    volumes:
+      - ../src:/var/www/html
+    depends_on:
+      - mysql
+    working_dir: /var/www/html
+    entrypoint: ['php', '/var/www/html/artisan']
+    networks:
+      - lumen-base
