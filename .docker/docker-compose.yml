@@ -40,7 +40,7 @@ services:
   php:
     build:
       context: .
-      dockerfile: php/Dockerfile
+      dockerfile: php/php.dockerfile
     container_name: php
     restart: unless-stopped
     tty: true
@@ -79,7 +79,7 @@ services:
   artisan:
     build:
       context: .
-      dockerfile: php/Dockerfile
+      dockerfile: php/php.dockerfile
     container_name: artisan
     volumes:
       - ../src:/var/www/html
